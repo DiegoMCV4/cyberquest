@@ -1,0 +1,11 @@
+{
+  "name": "ciudad-red-la-gran-brecha",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Videojuego educativo de ciberseguridad",
+  "scripts": {
+    "start": "docker compose up --build",
+    "stop": "docker compose down",
+    "logs": "docker compose logs -f"
+  }
+}

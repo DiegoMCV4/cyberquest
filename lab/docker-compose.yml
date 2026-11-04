@@ -1,0 +1,13 @@
+services:
+  vulnerable-lab:
+    build: .
+    environment:
+      LAB_MODE: vulnerable
+    ports:
+      - "127.0.0.1:8090:8081"
+  fixed-lab:
+    build: .
+    environment:
+      LAB_MODE: fixed
+    ports:
+      - "127.0.0.1:8091:8081"

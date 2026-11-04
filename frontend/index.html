@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Ciudad Red: La Gran Brecha</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#12172b;color:#fff;overflow:hidden}
+#game{position:fixed;inset:0}
+.panel{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,14,35,.88);z-index:5;padding:clamp(8px,2vw,24px);overflow-y:auto}
+.card{background:#1e2748;border:3px solid #6c8cff;border-radius:16px;padding:clamp(14px,3vw,24px);width:min(520px,100%);max-height:calc(100dvh - 2 * clamp(8px,2vw,24px));overflow-y:auto;overscroll-behavior:contain;box-shadow:0 8px 30px #0008}
+.wide-card{width:min(860px,100%)}
+h1{margin:0 0 6px;font-size:clamp(22px,4vw,28px)}h2{margin:0 0 10px;font-size:clamp(18px,3vw,22px)}p{line-height:1.45;overflow-wrap:anywhere}
+input{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:2px solid #44507f;background:#0f1530;color:#fff;font-size:16px}
+button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-size:16px;font-weight:700;background:#6c8cff;color:#fff;margin:4px 4px 0 0;max-width:100%;overflow-wrap:anywhere}
+button:hover{filter:brightness(1.15)}.opt{display:block;width:100%;text-align:left;background:#2b3766;margin:8px 0}
+.ok{background:#2fb872!important}.bad{background:#d9534f!important}.ghost{background:#3a4470}
+.neon{color:#7df9ff;text-shadow:0 0 12px #38d9ff}
+.rank{display:grid;grid-template-columns:42px 1fr auto;gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid #44507f}
+.rank:last-child{border-bottom:0}.rank.me{background:#304477;border-radius:8px}
+.pulse{animation:pulse .45s ease-out}@keyframes pulse{50%{transform:scale(1.03);filter:brightness(1.3)}}
+#hud{position:fixed;top:8px;left:8px;right:52px;display:flex;gap:6px;flex-wrap:wrap;z-index:3;pointer-events:none}
+#hud span{background:#1e2748cc;border:2px solid #6c8cff;border-radius:10px;padding:6px 12px;font-weight:700;max-width:100%;overflow-wrap:anywhere}
+#hud button{pointer-events:auto;margin:0;padding:6px 10px}
+.bar{height:12px;background:#0f1530;border-radius:8px;overflow:hidden;margin:6px 0 12px}.bar i{display:block;height:100%;background:#ff6b6b;transition:width .3s}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#ffd166;color:#222;padding:10px 18px;border-radius:12px;font-weight:700;z-index:6;display:none}
+.challenge{border:2px solid #44507f;border-radius:10px;padding:clamp(10px,2vw,14px);margin:10px 0}
+.challenge.solved{border-color:#35d07f}
+.challenge pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;background:#0f1530;padding:8px;border-radius:8px}
+.challenge small{display:block;opacity:.8;overflow-wrap:anywhere}
+select,textarea{max-width:100%;font:inherit}
+@media (max-width:600px){
+  .panel{align-items:flex-start;padding:8px}
+  .card{width:100%;border-width:2px;border-radius:12px}
+  #hud{top:4px;left:4px;right:42px;gap:4px}
+  #hud span{font-size:12px;padding:4px 7px;border-width:1px}
+  #hud button{font-size:13px;padding:5px 7px}
+  #snd{top:4px!important;right:4px!important;font-size:13px}
+  button{font-size:15px;padding:10px 12px}
+  .challenge pre{max-height:140px;font-size:12px}
+}
+.hidden{display:none!important}.err{color:#ff8a8a;min-height:20px}
+</style></head><body>
+<div id="game"></div>
+<div id="hud" class="hidden"><span id="hHearts"></span><span id="hXp"></span><span id="hZone"></span><button id="progressBtn" title="Ver progreso">📊</button><button id="assessmentBtn" title="Pre-test y post-test">📝</button><button id="settingsBtn" title="Ajustes">⚙️</button><button id="rankingBtn" title="Tabla de puntajes">🏆</button><button id="towerBtn" title="Tower Defense">🛡️ Redes</button><button id="escapeBtn" title="Escape Room">🚪 Escape Room</button><button id="detectiveBtn" title="Modo detective">🕵️ Detective</button><button id="finalBtn" title="Caso final">👑 Caso final</button><button id="mentorBtn" title="Maestro IA">🤖 Mentor</button><button id="adminBtn" class="hidden" title="Administrar preguntas">⚙️</button></div>
+<div id="toast"></div>
+
+<div id="progressPanel" class="panel hidden"><div class="card">
+  <h2>📊 Progreso de CyberQuest</h2><p id="progressText"></p>
+  <button id="progressClose" class="ghost">Cerrar</button>
+</div></div>
+<div id="assessmentPanel" class="panel hidden"><div class="card wide-card">
+  <h2>📝 Evaluación de aprendizaje</h2>
+  <p>Realiza un pre-test antes de jugar y un post-test al terminar para medir tu mejora por tema.</p>
+  <label for="assessmentTopic">Tema</label>
+  <select id="assessmentTopic" style="width:100%;padding:10px;background:#0f1530;color:#fff;border:2px solid #44507f;border-radius:10px">
+    <option value="redes">Redes</option><option value="vulnerabilidades">Vulnerabilidades</option><option value="bd">Bases de datos</option><option value="programacion">Programación</option>
+  </select>
+  <button id="pretestBtn">Iniciar pre-test</button><button id="posttestBtn">Iniciar post-test</button><button id="assessmentClose" class="ghost">Cerrar</button>
+  <p id="assessmentStatus"></p><div id="assessmentQuestions"></div><div id="assessmentSummary"></div>
+</div></div>
+<div id="tutorialPanel" class="panel hidden"><div class="card">
+  <h2>🎮 Tutorial: primera misión</h2>
+  <p>Muévete con WASD, flechas o tocando el mapa. Acércate al enemigo brillante, responde la pregunta y lee la explicación para aprender.</p>
+  <p>✅ Acierta para dañarlo · ❤️ Conserva tus vidas · 💡 Usa el Mentor si necesitas una pista.</p>
+  <button id="tutorialStart">Comenzar misión</button>
+</div></div>
+<div id="settingsPanel" class="panel hidden"><div class="card">
+  <h2>⚙️ Ajustes del agente</h2>
+  <label for="volumeSetting">Volumen: <span id="volumeValue">70</span>%</label>
+  <input id="volumeSetting" type="range" min="0" max="100" value="70">
+  <label for="difficultySetting">Dificultad</label>
+  <select id="difficultySetting" style="width:100%;padding:10px;background:#0f1530;color:#fff;border:2px solid #44507f;border-radius:10px">
+    <option value="adaptativa">Adaptativa</option><option value="facil">Fácil</option><option value="normal">Normal</option><option value="dificil">Difícil</option>
+  </select>
+  <p id="achievementsText"></p>
+  <button id="settingsSave">Guardar</button><button id="settingsClose" class="ghost">Cerrar</button>
+</div></div>
+<div id="rankingPanel" class="panel hidden"><div class="card">
+  <h2>🏆 Tabla de puntajes</h2><p id="rankingIntro">Los mejores agentes de Ciudad Red.</p>
+  <div id="rankingList"></div><button id="rankingClose" class="ghost">Cerrar</button>
+</div></div>
+<div id="escapePanel" class="panel hidden"><div class="card wide-card">
+  <h2>🚪 Escape Room educativo</h2>
+  <p id="escapeIntro"></p>
+  <select id="escapeRoom" style="width:100%;padding:10px;background:#0f1530;color:#fff;border:2px solid #44507f;border-radius:10px">
+    <option value="bd">🗄️ Cámara de Bases de Datos</option>
+    <option value="programacion">💻 Laboratorio de Código</option>
+  </select>
+  <p id="escapeStatus"></p>
+  <div id="escapeChallenges"></div>
+  <button id="escapeReset" class="ghost">Reiniciar sala</button><button id="escapeClose" class="ghost">Cerrar</button>
+</div></div>
+<div id="detectivePanel" class="panel hidden"><div class="card wide-card">
+  <h2>🕵️ Expediente Gran Brecha</h2>
+  <p id="detectiveIntro"></p><p id="detectiveStatus"></p>
+  <div id="detectiveChallenges"></div>
+  <button id="detectiveReset" class="ghost">Reiniciar investigación</button><button id="detectiveClose" class="ghost">Cerrar</button>
+</div></div>
+<div id="finalPanel" class="panel hidden"><div class="card wide-card">
+  <h2>👑 Jefe final: La Sombra del Proxy</h2><p id="finalStatus"></p><p id="finalPrompt"></p>
+  <div id="finalOptions"></div><p id="finalFeedback"></p><button id="finalClose" class="ghost">Cerrar</button>
+</div></div>
+<div id="mentorPanel" class="panel hidden"><div class="card">
+  <h2 class="neon">🤖 Maestro IA</h2>
+  <p>Solicita una pista progresiva. El mentor orienta tu razonamiento sin revelar la respuesta.</p>
+  <label for="mentorTopic">Tema</label>
+  <select id="mentorTopic" style="width:100%;padding:10px;background:#0f1530;color:#fff;border:2px solid #44507f;border-radius:10px">
+    <option value="redes">Redes</option><option value="seguridad">Seguridad</option>
+    <option value="bd">Bases de datos</option><option value="programacion">Programación</option>
+    <option value="detective">Detective</option><option value="jefe_final">Jefe final</option>
+  </select>
+  <label for="mentorLevel">Nivel de pista</label>
+  <select id="mentorLevel" style="width:100%;padding:10px;background:#0f1530;color:#fff;border:2px solid #44507f;border-radius:10px">
+    <option value="1">1 · Concepto</option><option value="2">2 · Orientación</option><option value="3">3 · Estrategia</option>
+  </select>
+  <p id="mentorAnswer" class="challenge hidden"></p>
+  <button id="mentorAsk">💡 Pedir pista</button>
+  <button id="mentorClose" class="ghost">Cerrar</button>
+</div></div>
+<div id="towerPanel" class="panel hidden"><div class="card wide-card">
+  <h2>🛡️ Defensa del servidor central</h2>
+  <p id="towerStatus"></p>
+  <div class="bar"><i id="towerHp" style="width:100%;background:#35d07f"></i></div>
+  <p id="towerAttack"></p>
+  <button id="towerStart">Iniciar partida</button><button id="towerClose" class="ghost">Cerrar</button>
+  <div id="towerQuiz" class="hidden">
+    <p id="towerQuestion" style="font-size:18px"></p>
+    <div id="towerOpts"></div>
+    <label for="towerDefense">Defensa a desplegar:</label>
+    <select id="towerDefense" style="width:100%;padding:10px;margin-top:8px;background:#0f1530;color:#fff;border:2px solid #44507f;border-radius:10px"></select>
+    <p id="towerFeedback"></p>
+  </div>
+</div></div>
+<div id="adminPanel" class="panel hidden"><div class="card">
+  <h2>⚙️ Panel de preguntas</h2>
+  <p>Agrega una pregunta en formato JSON. Solo las cuentas con rol administrador pueden usar este panel.</p>
+  <textarea id="adminJson" rows="9" style="width:100%;background:#0f1530;color:#fff;border:2px solid #44507f;border-radius:10px;padding:10px" placeholder='{"zone":"redes","topic":"redes","difficulty":1,"question_type":"opcion_multiple","text":"...","options":["A","B"],"correct_index":0,"explanation":"..."}'></textarea>
+  <p id="adminMsg" class="err"></p><button id="adminSave">Guardar pregunta</button><button id="adminClose" class="ghost">Cerrar</button>
+</div></div>
+
+<div id="login" class="panel"><div class="card">
+  <h1>🛡️ Ciudad Red</h1>
+  <p>Explora el mundo, derrota a los monstruos digitales respondiendo preguntas y ¡aprende redes, seguridad, bases de datos y programación mientras juegas!</p>
+  <input id="u" placeholder="Nombre de jugador (3-20 letras o números)" autocomplete="username">
+  <input id="p" type="password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="current-password">
+  <div class="err" id="err"></div>
+  <button id="bIn">Entrar</button><button id="bUp" class="ghost">Crear cuenta</button>
+  <p style="font-size:13px;opacity:.8">🎮 Mueve con flechas o WASD, o toca/haz clic donde quieras ir. Acércate a un monstruo para retarlo.</p>
+</div></div>
+
+<div id="quiz" class="panel hidden"><div class="card">
+  <h2 id="qMon"></h2><div class="bar"><i id="qHp" style="width:100%"></i></div>
+  <p id="qText" style="font-size:18px"></p><div id="qOpts"></div>
+  <div id="qJokers" class="hidden"><button id="jokerEliminate" class="ghost">🃏 Eliminar opciones</button><button id="jokerHint" class="ghost">🃏 Pedir pista</button></div>
+  <p id="qExp" class="hidden"></p>
+  <button id="qNext" class="hidden">Continuar ▶</button><button id="qFlee" class="ghost">Huir 🏃</button>
+</div></div>
+<button id="snd" style="position:fixed;top:8px;right:8px;z-index:4;padding:6px 10px">🔊</button>
+<div id="win" class="panel hidden"><div class="card"><h1>🏆 ¡Completaste CyberQuest!</h1>
+<p>Derrotaste al Rey del Ciberespacio y dominaste redes, seguridad, bases de datos y programación.</p>
+<p id="wXp"></p><button id="wOk">Seguir explorando</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js" integrity="sha384-162ec5d0261004761afacdafbd825e8aabce41fdedb99dbcbda7d1197bccb7b8a3c4d4d57f7f9e5cf90d448522f490f6" crossorigin="anonymous"></script>
+<script src="game.js?v=10"></script>
+</body></html>
