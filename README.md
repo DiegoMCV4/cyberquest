@@ -69,8 +69,8 @@ uvicorn app.main:app --reload
 ## Controles
 
 - Primera persona: haz clic en **Entrar al pasillo**, mueve el mouse para mirar,
-  usa WASD para caminar, E para interactuar y Esc para pausar. Esta es la
-  presentación activa de la rama `primera-persona`.
+  usa WASD para caminar, E o el botón **Interactuar (E)** para interactuar y
+  Esc para pausar. Esta es la presentación activa de la rama `primera-persona`.
 - Respaldo 2D: WASD, flechas o clic.
 - Acercarse a un módulo para iniciar su reto.
 - Cada respuesta muestra una explicación educativa.

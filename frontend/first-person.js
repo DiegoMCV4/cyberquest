@@ -113,9 +113,9 @@ function updatePrompt() {
   }
   const {module, type} = target.userData;
   const locked = type === 'door' && module.id !== 'bd' && !isRepaired(MODULES[MODULES.findIndex(item => item.id === module.id) - 1]);
-  prompt.textContent = locked
+  document.getElementById('fpPromptText').textContent = locked
     ? `🔒 ${module.title}: repara el módulo anterior`
-    : `Presiona E para ${type === 'terminal' ? 'usar la terminal' : 'inspeccionar la puerta'}`;
+    : `Presiona E para ${type === 'terminal' ? 'usar la terminal' : 'abrir el módulo'}`;
   prompt.classList.remove('hidden');
 }
 
@@ -135,16 +135,12 @@ function interact() {
   const index = MODULES.findIndex(item => item.id === module.id);
   const locked = type === 'door' && index > 0 && !isRepaired(MODULES[index - 1]);
   if (locked) {
-    prompt.textContent = '🔒 El programador debe reparar el módulo anterior primero.';
+    document.getElementById('fpPromptText').textContent = '🔒 El programador debe reparar el módulo anterior primero.';
     return;
   }
-  if (type === 'terminal') {
-    if (module.id === 'bd') window.openSqlEditor?.();
-    else if (module.id === 'programacion') window.openFirstPersonChallenge?.('buffer');
-    else window.openFirstPersonChallenge?.('auth');
-  } else {
-    prompt.textContent = `🧑‍💻 ${module.title}: ${module.concept}. Busca la terminal para aplicar el parche.`;
-  }
+  if (module.id === 'bd') window.openSqlEditor?.();
+  else if (module.id === 'programacion') window.openFirstPersonChallenge?.('buffer');
+  else window.openFirstPersonChallenge?.('auth');
 }
 
 function movePlayer(delta) {
@@ -198,7 +194,19 @@ function startFirstPerson() {
   scene.add(controls.object);
   clock = new THREE.Clock();
   prompt = document.getElementById('fpPrompt');
-  document.getElementById('fpStart').onclick = () => { hasStarted = true; controls.lock(); };
+  document.getElementById('fpInteract').onclick = interact;
+  document.getElementById('fpStart').onclick = () => {
+    hasStarted = true;
+    paused = false;
+    document.getElementById('fpOverlay').classList.add('hidden');
+    controls.lock();
+    setTimeout(() => {
+      if (hasStarted && !controls.isLocked) {
+        paused = false;
+        document.getElementById('fpOverlay').classList.add('hidden');
+      }
+    }, 500);
+  };
   controls.addEventListener('lock', () => { paused = false; showPause(); });
   controls.addEventListener('unlock', () => { paused = true; showPause(); });
   window.addEventListener('resize', () => {
@@ -207,7 +215,10 @@ function startFirstPerson() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
   window.addEventListener('keydown', event => {
-    if (event.code === 'KeyE') interact();
+    if (event.code === 'KeyE' || event.key?.toLowerCase() === 'e') {
+      event.preventDefault();
+      interact();
+    }
     if (event.code.startsWith('Key') || event.code.startsWith('Arrow')) keys.add(event.code);
   });
   window.addEventListener('keyup', event => keys.delete(event.code));
