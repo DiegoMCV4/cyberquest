@@ -183,8 +183,13 @@ function startFirstPerson() {
   renderer = new THREE.WebGLRenderer({antialias: true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x070b1c, 1);
   renderer.shadowMap.enabled = true;
+  container.style.background = '#070b1c';
   container.appendChild(renderer.domElement);
+  renderer.domElement.style.position = 'absolute';
+  renderer.domElement.style.inset = '0';
+  renderer.domElement.style.zIndex = '0';
   camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 1.65, 4);
   controls = new PointerLockControls(camera, renderer.domElement);
@@ -208,6 +213,7 @@ function startFirstPerson() {
   window.addEventListener('keyup', event => keys.delete(event.code));
   document.getElementById('fpPause').onclick = () => controls.lock();
   document.getElementById('fpOverlay').classList.remove('hidden');
+  renderer.render(scene, camera);
   animate();
 }
 
