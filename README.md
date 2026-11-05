@@ -92,6 +92,8 @@ Los retos son ficticios, seguros y no deben ejecutarse contra sistemas reales:
 
 Las preguntas del mapa funcionan como refuerzo entre retos. El post-test se
 habilita en el servidor después de completar al menos tres jefes/módulos.
+El selector evita preguntas ya vistas por el jugador hasta agotar las
+disponibles del tema y dificultad; después reutiliza primero las que falló.
 Al perder todas las vidas se muestra una pantalla educativa de derrota con
 opción de reintentar sin borrar el progreso guardado.
 

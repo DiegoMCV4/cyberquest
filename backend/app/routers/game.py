@@ -1,7 +1,7 @@
 import random
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -691,8 +691,8 @@ def get_questions(
     stmt = select(Question).where(Question.zone == zone)
     if difficulty:
         stmt = stmt.where(Question.difficulty == difficulty)
-    # Prioriza falladas y luego preguntas nuevas para reforzar el aprendizaje.
-    done = select(Attempt.question_id).where(Attempt.user_id == user.id, Attempt.correct.is_(True))
+    # Las preguntas no vistas tienen prioridad; solo se repiten al agotar el
+    # conjunto elegible para no romper la progresión adaptativa.
     failed = select(Attempt.question_id).where(Attempt.user_id == user.id, Attempt.correct.is_(False))
     profile = _get_profile(db, user.id)
     preferred = (profile.settings or {}).get("difficulty", "adaptativa")
@@ -713,7 +713,19 @@ def get_questions(
         target = {"facil": 1, "normal": 2, "dificil": 3}[preferred]
         stmt = stmt.where(Question.difficulty == target)
     random_order = func.rand() if db.bind.dialect.name == "mysql" else func.random()
-    return db.scalars(stmt.order_by(Question.id.in_(failed).desc(), Question.id.in_(done), random_order).limit(count)).all()
+    seen = exists().where(
+        Attempt.user_id == user.id,
+        Attempt.question_id == Question.id,
+    )
+    unseen = db.scalars(stmt.where(~seen).order_by(random_order).limit(count)).all()
+    if len(unseen) == count:
+        return unseen
+    selected_ids = [question.id for question in unseen]
+    remaining = stmt.where(~Question.id.in_(selected_ids))
+    repeated = db.scalars(
+        remaining.order_by(Question.id.in_(failed).desc(), random_order).limit(count - len(unseen))
+    ).all()
+    return unseen + repeated
 
 
 @router.post("/assessment/start")
@@ -734,16 +746,53 @@ def assessment_start(
     if existing:
         question_ids = existing.question_ids or []
         if existing.completed:
+            previous_ids = set(question_ids)
+            previous = db.scalars(select(Assessment).where(
+                Assessment.user_id == user.id,
+                Assessment.topic == data.topic,
+            )).all()
+            for assessment in previous:
+                previous_ids.update(assessment.question_ids or [])
+            random_order = func.rand() if db.bind.dialect.name == "mysql" else func.random()
+            fresh = db.scalars(
+                select(Question)
+                .where(
+                    Question.zone == data.topic,
+                    ~Question.id.in_(previous_ids) if previous_ids else True,
+                )
+                .order_by(random_order)
+                .limit(10)
+            ).all()
+            if len(fresh) >= 5:
+                question_ids = [question.id for question in fresh]
             existing.answers = {}
             existing.completed = False
             existing.score = 0
     else:
+        previous_ids = set()
+        previous = db.scalars(select(Assessment).where(
+            Assessment.user_id == user.id,
+            Assessment.topic == data.topic,
+        )).all()
+        for assessment in previous:
+            previous_ids.update(assessment.question_ids or [])
+        random_order = func.rand() if db.bind.dialect.name == "mysql" else func.random()
         questions = db.scalars(
             select(Question)
-            .where(Question.zone == data.topic)
-            .order_by(Question.difficulty, Question.id)
+            .where(
+                Question.zone == data.topic,
+                ~Question.id.in_(previous_ids) if previous_ids else True,
+            )
+            .order_by(random_order)
             .limit(10)
         ).all()
+        if len(questions) < 5:
+            questions = db.scalars(
+                select(Question)
+                .where(Question.zone == data.topic)
+                .order_by(random_order)
+                .limit(10)
+            ).all()
         if len(questions) < 5:
             raise HTTPException(409, "No hay suficientes preguntas para esta evaluación")
         question_ids = [question.id for question in questions]
