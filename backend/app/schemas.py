@@ -66,6 +66,13 @@ class DefeatIn(BaseModel):
     final: bool = False
 
 
+FirstPersonModule = Literal["bd", "programacion", "vulnerabilidades"]
+
+
+class ModuleRepairIn(BaseModel):
+    module: FirstPersonModule
+
+
 class BossStatus(BaseModel):
     zone: Zone
     name: str
@@ -101,7 +108,7 @@ class EscapeHintIn(BaseModel):
 
 
 class CodePatchIn(BaseModel):
-    level: Literal["sql"]
+    level: Literal["sql", "buffer", "auth"]
     code: str = Field(min_length=1, max_length=4000)
 
 

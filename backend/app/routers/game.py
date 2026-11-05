@@ -5,9 +5,9 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..challenge_validation import validate_sql_patch
+from ..challenge_validation import validate_auth_patch, validate_buffer_patch, validate_sql_patch
 from ..models import Assessment, Attempt, DetectiveState, Evidence, EscapeRoomState, GameProgress, PlayerProfile, Question, TowerDefenseState, User
-from ..schemas import AnswerIn, AnswerOut, AssessmentAnswerIn, AssessmentStartIn, BossStatus, CodePatchIn, DefeatIn, DetectiveAnswerIn, EscapeAnswerIn, EscapeHintIn, FinalAnswerIn, MentorHintIn, QuestionCreate, QuestionOut, SettingsIn, TowerAnswerIn, Zone
+from ..schemas import AnswerIn, AnswerOut, AssessmentAnswerIn, AssessmentStartIn, BossStatus, CodePatchIn, DefeatIn, DetectiveAnswerIn, EscapeAnswerIn, EscapeHintIn, FinalAnswerIn, MentorHintIn, ModuleRepairIn, QuestionCreate, QuestionOut, SettingsIn, TowerAnswerIn, Zone
 from ..security import get_current_user
 
 router = APIRouter(prefix="/game", tags=["game"])
@@ -450,6 +450,11 @@ def validate_editor_patch(
             progress.score += reward
             progress.level = user.xp // 100 + 1
             gained += reward
+        modules = dict(progress.defeated or {}).get("first_person_modules", {})
+        modules["bd"] = True
+        defeated = dict(progress.defeated or {})
+        defeated["first_person_modules"] = modules
+        progress.defeated = defeated
     db.commit()
     return {
         "correct": result.correct,
@@ -460,6 +465,62 @@ def validate_editor_patch(
         "xp_gained": gained,
         "total_xp": user.xp,
         "score": state.score,
+    }
+
+
+@router.post("/first-person/repair")
+def repair_first_person_module(
+    data: ModuleRepairIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Guarda el módulo reparado para desbloquear la siguiente puerta 3D."""
+    progress = _get_progress(db, user.id)
+    defeated = dict(progress.defeated or {})
+    modules = dict(defeated.get("first_person_modules", {}))
+    modules[data.module] = True
+    defeated["first_person_modules"] = modules
+    progress.defeated = defeated
+    db.commit()
+    return {"module": data.module, "modules": modules}
+
+
+@router.post("/first-person/challenge")
+def validate_first_person_challenge(
+    data: CodePatchIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    validators = {
+        "buffer": validate_buffer_patch,
+        "auth": validate_auth_patch,
+    }
+    validator = validators.get(data.level)
+    if validator is None:
+        raise HTTPException(422, "Este nivel usa el editor SQL")
+    result = validator(data.code)
+    module = "programacion" if data.level == "buffer" else "vulnerabilidades"
+    progress = _get_progress(db, user.id)
+    defeated = dict(progress.defeated or {})
+    modules = dict(defeated.get("first_person_modules", {}))
+    gained = 0
+    if result.correct and not modules.get(module):
+        modules[module] = True
+        defeated["first_person_modules"] = modules
+        progress.defeated = defeated
+        gained = 40
+        user.xp += gained
+        progress.score += gained
+        progress.level = user.xp // 100 + 1
+        db.commit()
+    return {
+        "correct": result.correct,
+        "explanation": result.explanation,
+        "missing": result.missing,
+        "module": module,
+        "modules": modules,
+        "xp_gained": gained,
+        "total_xp": user.xp,
     }
 
 
@@ -986,6 +1047,7 @@ def progress(user: User = Depends(get_current_user), db: Session = Depends(get_d
     state = db.scalar(select(GameProgress).where(GameProgress.user_id == user.id))
     defeated = state.defeated if state else {}
     bosses = state.bosses if state else []
+    defeated_data = state.defeated if state else {}
     return {
         "xp": user.xp,
         "level": state.level if state else user.xp // 100 + 1,
@@ -993,6 +1055,7 @@ def progress(user: User = Depends(get_current_user), db: Session = Depends(get_d
         "score": state.score if state else user.xp,
         "zones": {z: n for z, n in rows},
         "defeated": defeated,
+        "modules": (defeated_data or {}).get("first_person_modules", {}),
         "bosses": bosses,
         "final_defeated": bool(state and state.final_defeated),
     }

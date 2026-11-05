@@ -12,6 +12,7 @@ let paused = true;
 let interactables = [];
 let keys = new Set();
 let prompt;
+let hasStarted = false;
 
 function makeMaterial(color, emissive = color) {
   return new THREE.MeshStandardMaterial({color, emissive, emissiveIntensity: 0.35, roughness: 0.7});
@@ -88,9 +89,7 @@ function makeLabel(text, color) {
 }
 
 function isRepaired(module) {
-  if (module.id === 'bd') return Boolean(window.cyberQuestState?.defeated?.bd);
-  if (module.id === 'programacion') return Boolean(window.cyberQuestState?.defeated?.programacion);
-  return Boolean(window.cyberQuestState?.defeated?.vulnerabilidades);
+  return Boolean(window.cyberQuestState?.modules?.[module.id]);
 }
 
 function nearestInteractable() {
@@ -120,6 +119,15 @@ function updatePrompt() {
   prompt.classList.remove('hidden');
 }
 
+function isBlocked(position) {
+  return interactables.some(item => {
+    if (item.userData.type !== 'door') return false;
+    const index = MODULES.findIndex(module => module.id === item.userData.module.id);
+    const locked = index > 0 && !isRepaired(MODULES[index - 1]);
+    return locked && Math.abs(position.z - item.position.z) < 0.8 && Math.abs(position.x) < 2;
+  });
+}
+
 function interact() {
   const target = nearestInteractable();
   if (!target) return;
@@ -131,9 +139,9 @@ function interact() {
     return;
   }
   if (type === 'terminal') {
-    if (module.id === 'bd' && window.openSqlEditor) window.openSqlEditor();
-    else if (module.id === 'programacion') window.openEscapeRoom?.();
-    else window.openDetective?.();
+    if (module.id === 'bd') window.openSqlEditor?.();
+    else if (module.id === 'programacion') window.openFirstPersonChallenge?.('buffer');
+    else window.openFirstPersonChallenge?.('auth');
   } else {
     prompt.textContent = `🧑‍💻 ${module.title}: ${module.concept}. Busca la terminal para aplicar el parche.`;
   }
@@ -151,7 +159,7 @@ function movePlayer(delta) {
   const next = controls.object.position.clone().add(direction);
   next.x = THREE.MathUtils.clamp(next.x, -5.2, 5.2);
   next.z = THREE.MathUtils.clamp(next.z, -77, 5);
-  controls.getObject().position.copy(next);
+  if (!isBlocked(next)) controls.object.position.copy(next);
 }
 
 function animate() {
@@ -165,8 +173,8 @@ function animate() {
 function showPause() {
   paused = !controls.isLocked;
   document.getElementById('fpOverlay').classList.toggle('hidden', !paused);
-  document.getElementById('fpStart').classList.toggle('hidden', paused && controls.isLocked);
-  document.getElementById('fpPause').classList.toggle('hidden', !paused || !controls.isLocked);
+  document.getElementById('fpStart').classList.toggle('hidden', hasStarted);
+  document.getElementById('fpPause').classList.toggle('hidden', !hasStarted || !paused);
 }
 
 function startFirstPerson() {
@@ -185,7 +193,7 @@ function startFirstPerson() {
   scene.add(controls.object);
   clock = new THREE.Clock();
   prompt = document.getElementById('fpPrompt');
-  document.getElementById('fpStart').onclick = () => controls.lock();
+  document.getElementById('fpStart').onclick = () => { hasStarted = true; controls.lock(); };
   controls.addEventListener('lock', () => { paused = false; showPause(); });
   controls.addEventListener('unlock', () => { paused = true; showPause(); });
   window.addEventListener('resize', () => {

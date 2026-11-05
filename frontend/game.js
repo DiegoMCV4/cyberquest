@@ -15,6 +15,53 @@ async function api(path, opts = {}) {
   if (!r.ok) throw new Error(typeof d.detail === 'string' ? d.detail : 'Revisa tus datos: usuario de 3-20 letras/números y contraseña de 8 o más caracteres.');
   return d;
 }
+const FIRST_PERSON_CHALLENGES = {
+  buffer: {
+    title: '💾 Módulo de memoria · Desbordamiento de búfer',
+    intro: 'El holograma intenta escribir más de 8 casillas. Añade una comprobación de longitud antes de copiar la entrada.',
+    attack: 'Entrada ficticia: AAAAAAAA|DIRECCIÓN_DE_RETORNO',
+    code: 'entrada = recibir_entrada()\n// completa el parche seguro aquí',
+  },
+  auth: {
+    title: '🔐 Módulo de credenciales · Autenticación débil',
+    intro: 'El ataque de diccionario avanza. Activa controles que reduzcan intentos y protejan la cuenta.',
+    attack: 'Ataque simulado: intento 01 → intento 02 → intento 03 → ...',
+    code: '// completa la política segura aquí\ncuenta = autenticar(usuario, contraseña)',
+  },
+};
+let firstPersonChallengeLevel = null;
+function openFirstPersonChallenge(level) {
+  const challenge = FIRST_PERSON_CHALLENGES[level];
+  if (!challenge) return;
+  firstPersonChallengeLevel = level;
+  $('fpChallengeTitle').textContent = challenge.title;
+  $('fpChallengeIntro').textContent = challenge.intro;
+  $('fpChallengeAttack').textContent = challenge.attack;
+  $('fpChallengeCode').value = challenge.code;
+  $('fpChallengeFeedback').textContent = 'Lee el registro del ataque y escribe una defensa ficticia.';
+  $('fpChallengePanel').classList.remove('hidden');
+}
+async function validateFirstPersonChallenge() {
+  const feedback = $('fpChallengeFeedback');
+  $('fpChallengeValidate').disabled = true;
+  try {
+    const result = await api('/game/first-person/challenge', {
+      method: 'POST',
+      body: JSON.stringify({level: firstPersonChallengeLevel, code: $('fpChallengeCode').value}),
+    });
+    feedback.textContent = `${result.correct ? '✅ Parche aceptado.' : '❌ Parche incompleto.'} ${result.explanation}`;
+    if (result.correct) {
+      window.cyberQuestState = {...window.cyberQuestState, modules: result.modules};
+      xp = result.total_xp;
+      sfx.ok();
+      toast(`🛠️ Módulo ${result.module} reparado. +${result.xp_gained} XP`);
+    }
+  } catch (e) {
+    feedback.textContent = `⚠️ ${e.message}`;
+  } finally {
+    $('fpChallengeValidate').disabled = false;
+  }
+}
 let assessment = null;
 async function openAssessment() {
   $('assessmentPanel').classList.remove('hidden');
@@ -169,6 +216,8 @@ $('escapeRoom').onchange = openEscapeRoom; $('escapeReset').onclick = resetEscap
 $('sqlEditorOpen').onclick = openSqlEditor;
 $('sqlEditorValidate').onclick = validateSqlEditor;
 $('sqlEditorClose').onclick = () => $('sqlEditorPanel').classList.add('hidden');
+$('fpChallengeValidate').onclick = validateFirstPersonChallenge;
+$('fpChallengeClose').onclick = () => $('fpChallengePanel').classList.add('hidden');
 $('detectiveBtn').onclick = openDetective; $('detectiveClose').onclick = () => $('detectivePanel').classList.add('hidden');
 $('detectiveReset').onclick = resetDetective; $('finalClose').onclick = () => $('finalPanel').classList.add('hidden');
 $('finalBtn').onclick = openFinalBoss;
@@ -341,6 +390,7 @@ async function validateSqlEditor() {
     xp = result.total_xp;
     feedback.textContent = `${result.correct ? '✅ Parche aceptado.' : '❌ Parche incompleto.'} ${result.explanation}`;
     if (result.correct) {
+      await markFirstPersonModule('bd');
       sfx.ok();
       toast(`🛠️ Módulo SQL reparado. +${result.xp_gained} XP`);
       await openEscapeRoom();
@@ -361,10 +411,21 @@ async function answerEscapeChallenge(challengeId, optionIndex) {
     });
     xp = result.total_xp;
     renderEscapeRoom(result);
+    if (result.completed) {
+      await markFirstPersonModule(room);
+    }
     $(`escape-feedback-${challengeId}`).textContent =
       `${result.correct ? '✅ Correcto.' : '❌ Incorrecto.'} ${result.explanation} ${result.xp_gained ? `+${result.xp_gained} XP.` : ''}`;
     if (result.completed) toast('🏆 ¡Escapaste de la sala!');
   } catch (e) { feedback.textContent = e.message; }
+}
+async function markFirstPersonModule(module) {
+  const result = await api('/game/first-person/repair', {
+    method: 'POST',
+    body: JSON.stringify({module}),
+  });
+  window.cyberQuestState = {...window.cyberQuestState, modules: result.modules};
+  toast(`🔓 Puerta del módulo ${module} desbloqueada.`);
 }
 async function requestEscapeHint(challengeId) {
   try {
@@ -420,6 +481,7 @@ async function answerDetective(challengeId, optionIndex) {
       method: 'POST', body: JSON.stringify({challenge_id: challengeId, option_index: optionIndex}),
     });
     xp = result.total_xp; renderDetective(result);
+    if (result.completed) await markFirstPersonModule('vulnerabilidades');
     toast(`${result.correct ? '✅ Evidencia confirmada.' : '❌ Interpretación incorrecta.'} ${result.explanation}`);
     if (result.completed) toast('🏆 ¡Ya puedes abrir el caso final!');
   } catch (e) { toast(e.message); }

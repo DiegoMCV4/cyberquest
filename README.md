@@ -83,6 +83,11 @@ La escena 3D usa Three.js y PointerLockControls desde
 celulares la experiencia 3D no solicita controles táctiles todavía; se
 recomienda escritorio para la demo y la versión 2D permanece como respaldo.
 
+La secuencia 3D incluye tres terminales jugables: SQL Injection, desbordamiento
+de búfer simulado y autenticación débil. Cada parche se valida como texto
+ficticio, entrega feedback y guarda el módulo reparado para desbloquear la
+siguiente puerta.
+
 ## Rúbrica UNACH: niveles y mecánicas
 
 Alex es el programador protagonista que parchea tres módulos de Ciudad Red.

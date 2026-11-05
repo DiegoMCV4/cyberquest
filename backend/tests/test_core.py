@@ -5,7 +5,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 os.environ.setdefault("JWT_SECRET", "test-secret-with-at-least-32-characters")
 
 from app.seed import QUESTIONS
-from app.challenge_validation import validate_sql_patch
+from app.challenge_validation import validate_auth_patch, validate_buffer_patch, validate_sql_patch
 from app.questions_extra import EXPANDED, EXTRA
 from app.schemas import AnswerIn, Credentials
 
@@ -37,6 +37,16 @@ class CoreValidationTests(unittest.TestCase):
         result = validate_sql_patch('consulta = "SELECT * FROM usuarios WHERE nombre = " + nombre')
         self.assertFalse(result.correct)
         self.assertTrue(result.missing)
+
+    def test_buffer_editor_requires_length_limit(self):
+        result = validate_buffer_patch("if len(entrada) > 8: return error")
+        self.assertTrue(result.correct)
+
+    def test_auth_editor_requires_multiple_defenses(self):
+        result = validate_auth_patch(
+            "password_policy longitud; bloqueo tras intentos; MFA; hash con sal"
+        )
+        self.assertTrue(result.correct)
 
 
 if __name__ == "__main__":
