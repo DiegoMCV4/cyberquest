@@ -22,6 +22,9 @@ button:hover{filter:brightness(1.15)}.opt{display:block;width:100%;text-align:le
 #hud button{pointer-events:auto;margin:0;padding:6px 10px}
 .bar{height:12px;background:#0f1530;border-radius:8px;overflow:hidden;margin:6px 0 12px}.bar i{display:block;height:100%;background:#ff6b6b;transition:width .3s}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#ffd166;color:#222;padding:10px 18px;border-radius:12px;font-weight:700;z-index:6;display:none}
+#fpOverlay{position:fixed;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse at center,transparent 45%,#02030bcc 100%)}
+#fpStart,#fpPause{pointer-events:auto;background:#19b9db;color:#061323;border:2px solid #8df3ff}
+#fpPrompt{position:fixed;left:50%;bottom:42px;transform:translateX(-50%);z-index:6;background:#071021dd;border:1px solid #36dfff;border-radius:8px;padding:10px 16px;color:#dffaff;font-family:monospace}
 .challenge{border:2px solid #44507f;border-radius:10px;padding:clamp(10px,2vw,14px);margin:10px 0}
 .challenge.solved{border-color:#35d07f}
 .challenge pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;background:#0f1530;padding:8px;border-radius:8px}
@@ -42,6 +45,14 @@ select,textarea{max-width:100%;font:inherit}
 <div id="game"></div>
 <div id="hud" class="hidden"><span id="hHearts"></span><span id="hXp"></span><span id="hZone"></span><button id="progressBtn" title="Ver progreso">📊</button><button id="assessmentBtn" title="Pre-test y post-test">📝</button><button id="settingsBtn" title="Ajustes">⚙️</button><button id="rankingBtn" title="Tabla de puntajes">🏆</button><button id="towerBtn" title="Tower Defense">🛡️ Redes</button><button id="escapeBtn" title="Escape Room">🚪 Escape Room</button><button id="detectiveBtn" title="Modo detective">🕵️ Detective</button><button id="finalBtn" title="Caso final">👑 Caso final</button><button id="mentorBtn" title="Maestro IA">🤖 Mentor</button><button id="adminBtn" class="hidden" title="Administrar preguntas">⚙️</button></div>
 <div id="toast"></div>
+<div id="fpOverlay" class="hidden"><div id="fpStartCard" class="card" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:auto">
+  <h1>🧑‍💻 DEBUG DUNGEON</h1>
+  <p>Primera persona · WASD para moverte · Mouse para mirar · E para interactuar · Esc para pausar</p>
+  <p>Recorre el pasillo, inspecciona las puertas y repara cada módulo con código ficticio seguro.</p>
+  <button id="fpStart">Entrar al pasillo</button>
+  <button id="fpPause" class="hidden">Continuar</button>
+</div></div>
+<div id="fpPrompt" class="hidden"></div>
 
 <div id="progressPanel" class="panel hidden"><div class="card">
   <h2>📊 Progreso de CyberQuest</h2><p id="progressText"></p>
@@ -176,5 +187,6 @@ resultado = db.execute(consulta)</pre>
 <p>Derrotaste al Rey del Ciberespacio y dominaste redes, seguridad, bases de datos y programación.</p>
 <p id="wXp"></p><button id="wOk">Seguir explorando</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js" integrity="sha384-Fi7F0CYQBHYa+s2vvYJeiqvOQf3tuZ28vafRGXvMt7ijxNTVf3+eXPkNRIUi9JD2" crossorigin="anonymous"></script>
+<script type="module" src="first-person.js?v=1"></script>
 <script src="game.js?v=10"></script>
 </body></html>

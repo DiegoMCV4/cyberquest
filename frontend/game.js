@@ -138,7 +138,8 @@ async function auth(kind) {
       }
     });
     $('adminBtn').classList.toggle('hidden', me.role !== 'administrador');
-    $('login').classList.add('hidden'); $('hud').classList.remove('hidden'); hud('🌍 Explora'); startGame();
+    window.cyberQuestState = gameState;
+    $('login').classList.add('hidden'); $('hud').classList.remove('hidden'); hud('🌍 Debug Dungeon'); startGame();
     if (localStorage.getItem('cyberquest-tutorial') !== 'done') $('tutorialPanel').classList.remove('hidden');
   } catch (e) { $('err').textContent = e.message; }
 }
@@ -534,6 +535,10 @@ function startQuiz(m) {
 // ---- Mundo (Phaser) ----
 function px(s, key, w, h, draw) { const g = s.make.graphics({add: false}); draw(g); g.generateTexture(key, w, h); g.destroy(); }
 function startGame() {
+  if (window.startFirstPerson) {
+    window.startFirstPerson();
+    return;
+  }
   new Phaser.Game({type: Phaser.AUTO, parent: 'game', pixelArt: true, backgroundColor: '#12172b',
     scale: {mode: Phaser.Scale.RESIZE, width: '100%', height: '100%'}, physics: {default: 'arcade'}, scene: {create, update}});
 }

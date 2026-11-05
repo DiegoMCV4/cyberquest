@@ -68,12 +68,20 @@ uvicorn app.main:app --reload
 
 ## Controles
 
-- Moverse: WASD, flechas o clic.
+- Primera persona: haz clic en **Entrar al pasillo**, mueve el mouse para mirar,
+  usa WASD para caminar, E para interactuar y Esc para pausar. Esta es la
+  presentación activa de la rama `primera-persona`.
+- Respaldo 2D: WASD, flechas o clic.
 - Acercarse a un módulo para iniciar su reto.
 - Cada respuesta muestra una explicación educativa.
 - Una respuesta correcta daña al enemigo; una incorrecta consume una vida.
 - El primer inicio muestra un tutorial jugable de movimiento y combate.
 - El botón `📝` abre pre-test y post-test por tema.
+
+La escena 3D usa Three.js y PointerLockControls desde
+`frontend/vendor/`, sin depender de un CDN para la primera persona. En
+celulares la experiencia 3D no solicita controles táctiles todavía; se
+recomienda escritorio para la demo y la versión 2D permanece como respaldo.
 
 ## Rúbrica UNACH: niveles y mecánicas
 
