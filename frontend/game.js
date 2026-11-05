@@ -440,18 +440,31 @@ async function nextQuestion() {
 }
 async function answer(i) {
   const btns = [...$('qOpts').children]; btns.forEach(b => b.disabled = true); $('qFlee').classList.add('hidden');
-  const r = await api(`/game/questions/${q.id}/answer`, {method: 'POST', body: JSON.stringify({option_index: i})});
-  btns[r.correct_index].classList.add('ok'); if (!r.correct) btns[i].classList.add('bad'); r.correct ? sfx.ok() : sfx.bad();
-  const before = level(); xp = r.total_xp;
-  if (r.correct) { monHp--; $('qHp').style.width = (monHp / mon.maxHp * 100) + '%'; scene.cameras.main.flash(120, 45, 220, 120); } else { hearts--; scene.cameras.main.shake(180, .006); }
-  $('qExp').textContent = (r.correct ? '✅ ¡Correcto! ' : '❌ ¡Casi! ') + r.explanation + (r.xp_gained ? `  (+${r.xp_gained} XP)` : '');
-  $('qExp').classList.remove('hidden'); $('qNext').classList.remove('hidden'); hud();
-  if (level() > before) toast(`🎉 ¡Subiste al nivel ${level()}!`);
-  $('qNext').onclick = () => {
-    if (monHp <= 0) { endQuiz(); defeated(mon); }
-    else if (hearts <= 0) { hearts = 3; hud(); toast('😴 Descansa un momento y vuelve a intentarlo'); scene.player.setPosition(800, 690); endQuiz(); }
-    else nextQuestion();
-  };
+  try {
+    const r = await api(`/game/questions/${q.id}/answer`, {method: 'POST', body: JSON.stringify({option_index: i})});
+    btns[r.correct_index].classList.add('ok'); if (!r.correct) btns[i].classList.add('bad'); r.correct ? sfx.ok() : sfx.bad();
+    const before = level(); xp = r.total_xp;
+    if (r.correct) { monHp--; $('qHp').style.width = (monHp / mon.maxHp * 100) + '%'; scene.cameras.main.flash(120, 45, 220, 120); } else { hearts--; scene.cameras.main.shake(180, .006); }
+    $('qExp').textContent = (r.correct ? '✅ ¡Correcto! ' : '❌ ¡Casi! ') + r.explanation + (r.xp_gained ? `  (+${r.xp_gained} XP)` : '');
+    $('qExp').classList.remove('hidden'); $('qNext').classList.remove('hidden'); hud();
+    if (level() > before) toast(`🎉 ¡Subiste al nivel ${level()}!`);
+    $('qNext').onclick = () => {
+      if (monHp <= 0) { endQuiz(); defeated(mon); }
+      else if (hearts <= 0) { showDefeat(); }
+      else nextQuestion();
+    };
+  } catch (e) {
+    $('qExp').textContent = `⚠️ No se pudo registrar la respuesta: ${e.message}. Puedes reintentarlo.`;
+    $('qExp').classList.remove('hidden');
+    $('qNext').classList.add('hidden');
+    $('qFlee').classList.remove('hidden');
+    btns.forEach(b => { b.disabled = false; });
+  }
+}
+function showDefeat() {
+  hearts = 3; hud(); endQuiz();
+  $('defeatText').textContent = `El módulo ${ZONES[mon.zone]?.name || 'actual'} quedó sin defensas. Revisa la explicación y vuelve a intentarlo.`;
+  $('defeatPanel').classList.remove('hidden');
 }
 async function useJoker(joker) {
   try {
@@ -570,6 +583,11 @@ async function win() {
   $('win').classList.remove('hidden');
 }
 $('wOk').onclick = () => { $('win').classList.add('hidden'); busy = false; };
+$('defeatRetry').onclick = () => {
+  $('defeatPanel').classList.add('hidden');
+  scene.player.setPosition(800, 690);
+  toast('🔁 Reintenta el módulo y aplica la corrección aprendida.');
+};
 let sound = localStorage.getItem('cyberquest-sound') !== 'off', actx;
 function beep(f, d = .12, type = 'square') {
   if (!sound) return;

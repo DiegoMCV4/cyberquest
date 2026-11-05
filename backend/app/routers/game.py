@@ -722,6 +722,10 @@ def assessment_start(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if data.kind == "post":
+        progress = _get_progress(db, user.id)
+        if len(progress.bosses or []) < 3:
+            raise HTTPException(409, "Completa al menos tres niveles antes del post-test")
     existing = db.scalar(select(Assessment).where(
         Assessment.user_id == user.id,
         Assessment.kind == data.kind,

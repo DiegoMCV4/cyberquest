@@ -15,3 +15,7 @@
 - [ ] Pruebas automáticas pasan.
 - [ ] Informe CVSS incluye evidencia antes/después.
 - [ ] Diagramas Mermaid y guion de demo incluidos.
+- [ ] Documento de diseño, manual, encuesta e informe de pruebas incluidos.
+- [ ] Roles, contribuciones y bitácora del equipo documentados.
+- [ ] Protagonista programador y aviso ético visibles antes de jugar.
+- [ ] Tres módulos con mecánicas distintas demostrados, no solo preguntas.

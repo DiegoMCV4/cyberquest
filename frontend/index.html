@@ -138,13 +138,15 @@ select,textarea{max-width:100%;font:inherit}
 </div></div>
 
 <div id="login" class="panel"><div class="card">
-  <h1>🛡️ Ciudad Red</h1>
-  <p>Explora el mundo, derrota a los monstruos digitales respondiendo preguntas y ¡aprende redes, seguridad, bases de datos y programación mientras juegas!</p>
+  <h1>🧑‍💻 Ciudad Red: La Gran Brecha</h1>
+  <p>Eres Alex, el programador héroe encargado de parchear los módulos de una ciudad atacada. Cada nivel representa una decisión técnica distinta.</p>
+  <p class="challenge">Niveles: 🗄️ parametrizar consultas · 💻 corregir código · 🕵️ detectar ingeniería social. Las preguntas refuerzan lo aprendido.</p>
   <input id="u" placeholder="Nombre de jugador (3-20 letras o números)" autocomplete="username">
   <input id="p" type="password" placeholder="Contraseña (mínimo 8 caracteres)" autocomplete="current-password">
   <div class="err" id="err"></div>
   <button id="bIn">Entrar</button><button id="bUp" class="ghost">Crear cuenta</button>
-  <p style="font-size:13px;opacity:.8">🎮 Mueve con flechas o WASD, o toca/haz clic donde quieras ir. Acércate a un monstruo para retarlo.</p>
+  <p style="font-size:13px;opacity:.8">🎮 Mueve con flechas o WASD, o toca/haz clic donde quieras ir. Acércate a un módulo para repararlo.</p>
+  <p style="font-size:12px;opacity:.8">⚖️ Aviso ético: los ejemplos son ficticios y educativos. Aplica estas técnicas solo en sistemas propios o con autorización.</p>
 </div></div>
 
 <div id="quiz" class="panel hidden"><div class="card">
@@ -153,6 +155,10 @@ select,textarea{max-width:100%;font:inherit}
   <div id="qJokers" class="hidden"><button id="jokerEliminate" class="ghost">🃏 Eliminar opciones</button><button id="jokerHint" class="ghost">🃏 Pedir pista</button></div>
   <p id="qExp" class="hidden"></p>
   <button id="qNext" class="hidden">Continuar ▶</button><button id="qFlee" class="ghost">Huir 🏃</button>
+</div></div>
+<div id="defeatPanel" class="panel hidden"><div class="card">
+  <h1>💥 Módulo sin defensas</h1><p id="defeatText"></p>
+  <button id="defeatRetry">Reintentar nivel</button>
 </div></div>
 <button id="snd" style="position:fixed;top:8px;right:8px;z-index:4;padding:6px 10px">🔊</button>
 <div id="win" class="panel hidden"><div class="card"><h1>🏆 ¡Completaste CyberQuest!</h1>

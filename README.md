@@ -32,8 +32,9 @@ npm start
 Este comando solo es un atajo para `docker compose up --build`; no instala
 dependencias de Node.js. Para detener los servicios usa `npm run stop`.
 
-Abre el juego en <http://localhost:8080>. La documentación de la API está en
-<http://localhost:8000/docs>.
+Abre el juego en <http://localhost:8080>. La documentación de la API, si se
+habilita para desarrollo, está disponible detrás del proxy en
+<http://localhost:8080/api/docs>.
 
 La primera ejecución crea las tablas y carga automáticamente **200 preguntas
 educativas sin duplicados exactos**, distribuidas en redes, vulnerabilidades,
@@ -68,11 +69,35 @@ uvicorn app.main:app --reload
 ## Controles
 
 - Moverse: WASD, flechas o clic.
-- Acercarse a un enemigo para iniciar un combate.
+- Acercarse a un módulo para iniciar su reto.
 - Cada respuesta muestra una explicación educativa.
 - Una respuesta correcta daña al enemigo; una incorrecta consume una vida.
 - El primer inicio muestra un tutorial jugable de movimiento y combate.
 - El botón `📝` abre pre-test y post-test por tema.
+
+## Rúbrica UNACH: niveles y mecánicas
+
+Alex es el programador protagonista que parchea tres módulos de Ciudad Red.
+Los retos son ficticios, seguros y no deben ejecutarse contra sistemas reales:
+
+1. **Cámara de Bases de Datos:** el jugador corrige una consulta insegura
+   seleccionando parámetros en el Escape Room. La mecánica representa
+   parametrización y separación entre código y datos.
+2. **Laboratorio de Código:** el jugador elige validación de longitud,
+   escape de salida y almacenamiento seguro de credenciales. La mecánica es
+   revisión de código, no una pregunta decorativa.
+3. **Expediente de Ingeniería Social:** el jugador analiza mensajes, DNS y
+   registros ficticios y reúne evidencias. La mecánica es clasificar señales y
+   justificar una decisión.
+
+Las preguntas del mapa funcionan como refuerzo entre retos. El post-test se
+habilita en el servidor después de completar al menos tres jefes/módulos.
+Al perder todas las vidas se muestra una pantalla educativa de derrota con
+opción de reintentar sin borrar el progreso guardado.
+
+Todo el contenido es educativo y autorizado. El laboratorio vulnerable de
+`lab/` es opcional, local y aislado; no forma parte del flujo obligatorio del
+juego.
 
 ## Fase 2: distritos y jefes
 
