@@ -101,6 +101,22 @@ Todo el contenido es educativo y autorizado. El laboratorio vulnerable de
 `lab/` es opcional, local y aislado; no forma parte del flujo obligatorio del
 juego.
 
+## Editor ficticio del Nivel 1
+
+En **Escape Room → Cámara de Bases de Datos → Abrir editor SQL**, el jugador
+reescribe una consulta ficticia para corregir la inyección SQL. El validador
+acepta únicamente reglas educativas: marcador de parámetro, valores separados
+y llamada simulada a `execute`; rechaza concatenación e interpolación. El texto
+no se ejecuta como Python ni como SQL y el avance se guarda mediante la API.
+El modo de opciones original permanece disponible como alternativa.
+
+Capturas nuevas para el documento y la presentación:
+
+1. Editor mostrando la consulta insegura y la entrada ficticia del atacante.
+2. Editor con un parche incompleto y el mensaje que indica qué falta.
+3. Editor con el parche aceptado, XP y módulo SQL reparado.
+4. Escape Room mostrando el progreso persistente del reto `bd-select`.
+
 ## Fase 2: distritos y jefes
 
 Cada distrito contiene cuatro enemigos. Al derrotarlos aparece su jefe:

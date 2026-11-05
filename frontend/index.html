@@ -86,8 +86,19 @@ select,textarea{max-width:100%;font:inherit}
     <option value="programacion">💻 Laboratorio de Código</option>
   </select>
   <p id="escapeStatus"></p>
+  <button id="sqlEditorOpen">💻 Abrir editor SQL</button>
   <div id="escapeChallenges"></div>
   <button id="escapeReset" class="ghost">Reiniciar sala</button><button id="escapeClose" class="ghost">Cerrar</button>
+</div></div>
+<div id="sqlEditorPanel" class="panel hidden"><div class="card wide-card">
+  <h2>💻 Editor de parche: Cámara de Bases de Datos</h2>
+  <p>El ataque usa una entrada ficticia para alterar una consulta concatenada. Escribe un parche seguro sin ejecutar nada: usa un marcador, separa los parámetros y envía la consulta con <code>execute</code>.</p>
+  <pre>consulta = "SELECT * FROM usuarios WHERE nombre = '" + nombre + "'"
+resultado = db.execute(consulta)</pre>
+  <label for="sqlEditorCode">Código ficticio</label>
+  <textarea id="sqlEditorCode" rows="8" spellcheck="false" style="width:100%;background:#0f1530;color:#fff;border:2px solid #44507f;border-radius:10px;padding:10px;font-family:monospace"></textarea>
+  <p id="sqlEditorFeedback" class="challenge"></p>
+  <button id="sqlEditorValidate">Validar parche</button><button id="sqlEditorClose" class="ghost">Cerrar</button>
 </div></div>
 <div id="detectivePanel" class="panel hidden"><div class="card wide-card">
   <h2>🕵️ Expediente Gran Brecha</h2>

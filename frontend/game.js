@@ -165,6 +165,9 @@ $('towerBtn').onclick = openTowerDefense; $('towerClose').onclick = closeTowerDe
 $('towerStart').onclick = startTowerDefense;
 $('escapeBtn').onclick = openEscapeRoom; $('escapeClose').onclick = () => $('escapePanel').classList.add('hidden');
 $('escapeRoom').onchange = openEscapeRoom; $('escapeReset').onclick = resetEscapeRoom;
+$('sqlEditorOpen').onclick = openSqlEditor;
+$('sqlEditorValidate').onclick = validateSqlEditor;
+$('sqlEditorClose').onclick = () => $('sqlEditorPanel').classList.add('hidden');
 $('detectiveBtn').onclick = openDetective; $('detectiveClose').onclick = () => $('detectivePanel').classList.add('hidden');
 $('detectiveReset').onclick = resetDetective; $('finalClose').onclick = () => $('finalPanel').classList.add('hidden');
 $('finalBtn').onclick = openFinalBoss;
@@ -318,6 +321,34 @@ function renderEscapeRoom(state) {
       container.appendChild(button);
     });
   });
+}
+function openSqlEditor() {
+  $('sqlEditorCode').value = `consulta = "SELECT * FROM usuarios WHERE nombre = ?"
+parametros = (nombre,)
+resultado = db.execute(consulta, parametros)`;
+  $('sqlEditorFeedback').textContent = 'El mentor espera un parche que separe consulta y datos.';
+  $('sqlEditorPanel').classList.remove('hidden');
+}
+async function validateSqlEditor() {
+  const feedback = $('sqlEditorFeedback');
+  $('sqlEditorValidate').disabled = true;
+  try {
+    const result = await api('/game/editor/validate', {
+      method: 'POST',
+      body: JSON.stringify({level: 'sql', code: $('sqlEditorCode').value}),
+    });
+    xp = result.total_xp;
+    feedback.textContent = `${result.correct ? '✅ Parche aceptado.' : '❌ Parche incompleto.'} ${result.explanation}`;
+    if (result.correct) {
+      sfx.ok();
+      toast(`🛠️ Módulo SQL reparado. +${result.xp_gained} XP`);
+      await openEscapeRoom();
+    }
+  } catch (e) {
+    feedback.textContent = `⚠️ ${e.message}`;
+  } finally {
+    $('sqlEditorValidate').disabled = false;
+  }
 }
 async function answerEscapeChallenge(challengeId, optionIndex) {
   const room = $('escapeRoom').value;

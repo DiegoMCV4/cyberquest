@@ -5,8 +5,9 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..challenge_validation import validate_sql_patch
 from ..models import Assessment, Attempt, DetectiveState, Evidence, EscapeRoomState, GameProgress, PlayerProfile, Question, TowerDefenseState, User
-from ..schemas import AnswerIn, AnswerOut, AssessmentAnswerIn, AssessmentStartIn, BossStatus, DefeatIn, DetectiveAnswerIn, EscapeAnswerIn, EscapeHintIn, FinalAnswerIn, MentorHintIn, QuestionCreate, QuestionOut, SettingsIn, TowerAnswerIn, Zone
+from ..schemas import AnswerIn, AnswerOut, AssessmentAnswerIn, AssessmentStartIn, BossStatus, CodePatchIn, DefeatIn, DetectiveAnswerIn, EscapeAnswerIn, EscapeHintIn, FinalAnswerIn, MentorHintIn, QuestionCreate, QuestionOut, SettingsIn, TowerAnswerIn, Zone
 from ..security import get_current_user
 
 router = APIRouter(prefix="/game", tags=["game"])
@@ -419,6 +420,47 @@ def escape_room_hint(
     state.score = max(0, state.score - 5)
     db.commit()
     return {"hint": challenge["hint"], "score": state.score, "hints_used": state.hints_used}
+
+
+@router.post("/editor/validate")
+def validate_editor_patch(
+    data: CodePatchIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Valida un parche ficticio y guarda el avance del módulo SQL."""
+    result = validate_sql_patch(data.code)
+    state = _get_escape_state(db, user.id, "bd")
+    solved = list(state.solved or [])
+    gained = 0
+    if result.correct and "bd-select" not in solved:
+        solved.append("bd-select")
+        state.solved = solved
+        gained = 20
+        state.score += gained
+        user.xp += gained
+        progress = _get_progress(db, user.id)
+        progress.score += gained
+        progress.level = user.xp // 100 + 1
+        if len(solved) == len(ESCAPE_ROOMS["bd"]["challenges"]):
+            state.completed = True
+            reward = ESCAPE_ROOMS["bd"]["reward"]
+            state.score += reward
+            user.xp += reward
+            progress.score += reward
+            progress.level = user.xp // 100 + 1
+            gained += reward
+    db.commit()
+    return {
+        "correct": result.correct,
+        "explanation": result.explanation,
+        "missing": result.missing,
+        "solved": "bd-select" in (state.solved or []),
+        "completed": state.completed,
+        "xp_gained": gained,
+        "total_xp": user.xp,
+        "score": state.score,
+    }
 
 
 def _detective_response(state: DetectiveState) -> dict:

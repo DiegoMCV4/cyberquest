@@ -100,6 +100,11 @@ class EscapeHintIn(BaseModel):
     challenge_id: str = Field(min_length=3, max_length=50)
 
 
+class CodePatchIn(BaseModel):
+    level: Literal["sql"]
+    code: str = Field(min_length=1, max_length=4000)
+
+
 class DetectiveAnswerIn(BaseModel):
     challenge_id: str = Field(min_length=3, max_length=50)
     option_index: int = Field(ge=0, le=5)
